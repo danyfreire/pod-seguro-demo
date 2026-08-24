@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DeliveryStatus {
+  PENDING
+  OTP_SENT
+  OTP_VERIFIED
+  DELIVERY_IN_PROGRESS
+  COMPLETED
+  COMPLETED_CONTINGENCY
+}
+
+enum VerificationMethod {
+  OTP_VERIFIED
+  MANUAL_CONTINGENCY
+}
+
+model Delivery {
+  id                    String              @id @default(uuid())
+  trackingNumber        String              @unique
+  recipientName         String
+  recipientEmail        String
+  deliveryAddress       String
+  status                DeliveryStatus      @default(PENDING)
+  verificationMethod    VerificationMethod?
+  recipientDocument     String?
+  recipientRelationship String?
+  latitude              Float?
+  longitude             Float?
+  locationAccuracy      Float?
+  deliveredAt           DateTime?
+  signature             String?
+  podPayload            Json?
+  integrityHash         String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  otps                   OTP[]
+}
+
+model OTP {
+  id           String    @id @default(uuid())
+  deliveryId   String
+  otpHash      String
+  expiresAt    DateTime
+  sentAt       DateTime?
+  verifiedAt   DateTime?
+  attemptCount Int       @default(0)
+  createdAt    DateTime  @default(now())
+  delivery     Delivery  @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId])
+}
